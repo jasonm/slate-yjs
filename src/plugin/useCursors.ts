@@ -12,69 +12,50 @@ export const useCursors = (
 } => {
   const [cursors, setCursorData] = useState<Cursor[]>([]);
 
-  useEffect(() => {
+  const onUpdate = useCallback(() => {
     const { awarenessPath } = editor;
-    editor.awareness.on('update', () => {
-      //Array.from(editor.awareness.getStates()).forEach(
-      //  ([clientId, awareness]) => {
-      //    console.log('awareness update', clientId, JSON.stringify(awareness));
-      //  }
-      //);
+    //console.log('awareness update');
+    const otherAwarenessesInPath = Array.from(
+      editor.awareness.getStates()
+    ).filter(
+      ([clientId, awareness]) =>
+        clientId !== editor.sharedType.doc?.clientID && awareness[awarenessPath]
+    );
 
-      const otherAwarenessesInPath = Array.from(
-        editor.awareness.getStates()
-      ).filter(
-        ([clientId, awareness]) =>
-          clientId !== editor.sharedType.doc?.clientID &&
-          awareness[awarenessPath]
-      );
+    const newCursorData = otherAwarenessesInPath
+      .map(([, awareness]) => {
+        let anchor = null;
+        let focus = null;
 
-      otherAwarenessesInPath.forEach(([clientId, awareness]) => {
-        console.log(
-          'other awareness update',
-          clientId,
-          JSON.stringify(awareness)
-        );
-      });
+        if (awareness[awarenessPath].anchor) {
+          anchor = relativePositionToAbsolutePosition(
+            editor.sharedType,
+            awareness[awarenessPath].anchor
+          );
+        }
 
-      //console.log(
-      //  'otherAwarenessesInPath',
-      //  JSON.stringify(otherAwarenessesInPath)
-      //);
+        if (awareness[awarenessPath].focus) {
+          focus = relativePositionToAbsolutePosition(
+            editor.sharedType,
+            awareness[awarenessPath].focus
+          );
+        }
 
-      const newCursorData = otherAwarenessesInPath
-        //  Array.from(editor.awareness.getStates())
-        //    .filter(
-        //      ([clientId, awareness]) =>
-        //        clientId !== editor.sharedType.doc?.clientID &&
-        //        awareness[awarenessPath]
-        //    )
-        .map(([, awareness]) => {
-          let anchor = null;
-          let focus = null;
+        return { anchor, focus, data: awareness[awarenessPath] };
+      })
+      .filter((cursor) => cursor.anchor && cursor.focus);
 
-          if (awareness[awarenessPath].anchor) {
-            anchor = relativePositionToAbsolutePosition(
-              editor.sharedType,
-              awareness[awarenessPath].anchor
-            );
-          }
-
-          if (awareness[awarenessPath].focus) {
-            focus = relativePositionToAbsolutePosition(
-              editor.sharedType,
-              awareness[awarenessPath].focus
-            );
-          }
-
-          return { anchor, focus, data: awareness[awarenessPath] };
-        })
-        .filter((cursor) => cursor.anchor && cursor.focus);
-
-      console.log('new cursor data', JSON.stringify(newCursorData));
-      setCursorData(newCursorData as unknown as Cursor[]);
-    });
+    setCursorData(newCursorData as unknown as Cursor[]);
   }, [editor]);
+
+  useEffect(() => {
+    // TODO: Not sure if this is needed or not, but possibly,
+    // to draw other cursors who are already present in the
+    // editor when this editor first renders.
+    onUpdate();
+    editor.awareness.on('update', onUpdate);
+    return () => editor.awareness.off('update', onUpdate);
+  }, [editor, onUpdate]);
 
   const decorate = useCallback(
     ([node, path]: NodeEntry) => {
