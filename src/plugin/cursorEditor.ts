@@ -39,7 +39,15 @@ export const CursorEditor = {
 
     const awareness = CursorEditor.awareness(editor);
     const awarenessPath = CursorEditor.awarenessPath(editor);
-    awareness.setLocalStateField(awarenessPath, { anchor, focus });
+
+    const prevAwarenessState = awareness.getLocalState();
+    const prevAwarenessStateForPath = (prevAwarenessState || {})[awarenessPath];
+
+    awareness.setLocalStateField(awarenessPath, {
+      ...(prevAwarenessStateForPath || {}),
+      anchor,
+      focus,
+    });
   },
 };
 
