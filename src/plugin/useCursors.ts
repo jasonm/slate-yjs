@@ -13,31 +13,65 @@ export const useCursors = (
   const [cursors, setCursorData] = useState<Cursor[]>([]);
 
   useEffect(() => {
+    const { awarenessPath } = editor;
     editor.awareness.on('update', () => {
-      const newCursorData = Array.from(editor.awareness.getStates())
-        .filter(([clientId]) => clientId !== editor.sharedType.doc?.clientID)
+      //Array.from(editor.awareness.getStates()).forEach(
+      //  ([clientId, awareness]) => {
+      //    console.log('awareness update', clientId, JSON.stringify(awareness));
+      //  }
+      //);
+
+      const otherAwarenessesInPath = Array.from(
+        editor.awareness.getStates()
+      ).filter(
+        ([clientId, awareness]) =>
+          clientId !== editor.sharedType.doc?.clientID &&
+          awareness[awarenessPath]
+      );
+
+      otherAwarenessesInPath.forEach(([clientId, awareness]) => {
+        console.log(
+          'other awareness update',
+          clientId,
+          JSON.stringify(awareness)
+        );
+      });
+
+      //console.log(
+      //  'otherAwarenessesInPath',
+      //  JSON.stringify(otherAwarenessesInPath)
+      //);
+
+      const newCursorData = otherAwarenessesInPath
+        //  Array.from(editor.awareness.getStates())
+        //    .filter(
+        //      ([clientId, awareness]) =>
+        //        clientId !== editor.sharedType.doc?.clientID &&
+        //        awareness[awarenessPath]
+        //    )
         .map(([, awareness]) => {
           let anchor = null;
           let focus = null;
 
-          if (awareness.anchor) {
+          if (awareness[awarenessPath].anchor) {
             anchor = relativePositionToAbsolutePosition(
               editor.sharedType,
-              awareness.anchor
+              awareness[awarenessPath].anchor
             );
           }
 
-          if (awareness.focus) {
+          if (awareness[awarenessPath].focus) {
             focus = relativePositionToAbsolutePosition(
               editor.sharedType,
-              awareness.focus
+              awareness[awarenessPath].focus
             );
           }
 
-          return { anchor, focus, data: awareness };
+          return { anchor, focus, data: awareness[awarenessPath] };
         })
         .filter((cursor) => cursor.anchor && cursor.focus);
 
+      console.log('new cursor data', JSON.stringify(newCursorData));
       setCursorData(newCursorData as unknown as Cursor[]);
     });
   }, [editor]);
