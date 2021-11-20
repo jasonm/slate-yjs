@@ -13,13 +13,12 @@ export const useCursors = (
   const [cursors, setCursorData] = useState<Cursor[]>([]);
 
   const onUpdate = useCallback(() => {
-    const { awarenessPath } = editor;
-    //console.log('awareness update');
     const otherAwarenessesInPath = Array.from(
       editor.awareness.getStates()
     ).filter(
       ([clientId, awareness]) =>
-        clientId !== editor.sharedType.doc?.clientID && awareness[awarenessPath]
+        clientId !== editor.sharedType.doc?.clientID &&
+        awareness.awarenessPath === editor.awarenessPath
     );
 
     const newCursorData = otherAwarenessesInPath
@@ -27,21 +26,21 @@ export const useCursors = (
         let anchor = null;
         let focus = null;
 
-        if (awareness[awarenessPath].anchor) {
+        if (awareness && awareness.anchor) {
           anchor = relativePositionToAbsolutePosition(
             editor.sharedType,
-            awareness[awarenessPath].anchor
+            awareness.anchor
           );
         }
 
-        if (awareness[awarenessPath].focus) {
+        if (awareness && awareness.focus) {
           focus = relativePositionToAbsolutePosition(
             editor.sharedType,
-            awareness[awarenessPath].focus
+            awareness.focus
           );
         }
 
-        return { anchor, focus, data: awareness[awarenessPath] };
+        return { anchor, focus, data: awareness };
       })
       .filter((cursor) => cursor.anchor && cursor.focus);
 
