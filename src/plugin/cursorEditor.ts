@@ -19,12 +19,6 @@ export const CursorEditor = {
     return awareness;
   },
 
-  //awarenessPath(editor: CursorEditor): string {
-  //  const awarenessPath = AWARENESS_PATHS.get(editor);
-  //  invariant(awarenessPath, 'CursorEditor without attached awarenessPath');
-  //  return awarenessPath;
-  //},
-
   updateCursor: (editor: CursorEditor): void => {
     const sharedType = YjsEditor.sharedType(editor);
     const { selection } = editor;
@@ -38,9 +32,6 @@ export const CursorEditor = {
       absolutePositionToRelativePosition(sharedType, selection.focus);
 
     const awareness = CursorEditor.awareness(editor);
-    //const awarenessPath = CursorEditor.awarenessPath(editor);
-    //const prevAwarenessState = awareness.getLocalState();
-    //const prevAwarenessStateForPath = (prevAwarenessState || {})[awarenessPath];
 
     awareness.setLocalState({
       ...awareness.getLocalState(),
