@@ -26,14 +26,14 @@ export const useCursors = (
         let anchor = null;
         let focus = null;
 
-        if (awareness && awareness.anchor) {
+        if (awareness && awareness.anchor && editor.sharedType) {
           anchor = relativePositionToAbsolutePosition(
             editor.sharedType,
             awareness.anchor
           );
         }
 
-        if (awareness && awareness.focus) {
+        if (awareness && awareness.focus && editor.sharedType) {
           focus = relativePositionToAbsolutePosition(
             editor.sharedType,
             awareness.focus
