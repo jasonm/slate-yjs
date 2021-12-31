@@ -12,35 +12,49 @@ export const useCursors = (
 } => {
   const [cursors, setCursorData] = useState<Cursor[]>([]);
 
-  useEffect(() => {
-    editor.awareness.on('update', () => {
-      const newCursorData = Array.from(editor.awareness.getStates())
-        .filter(([clientId]) => clientId !== editor.sharedType.doc?.clientID)
-        .map(([, awareness]) => {
-          let anchor = null;
-          let focus = null;
+  const onUpdate = useCallback(() => {
+    const otherAwarenessesInPath = Array.from(
+      editor.awareness.getStates()
+    ).filter(
+      ([clientId, awareness]) =>
+        clientId !== editor.sharedType.doc?.clientID &&
+        awareness.awarenessPath === editor.awarenessPath
+    );
 
-          if (awareness.anchor) {
-            anchor = relativePositionToAbsolutePosition(
-              editor.sharedType,
-              awareness.anchor
-            );
-          }
+    const newCursorData = otherAwarenessesInPath
+      .map(([, awareness]) => {
+        let anchor = null;
+        let focus = null;
 
-          if (awareness.focus) {
-            focus = relativePositionToAbsolutePosition(
-              editor.sharedType,
-              awareness.focus
-            );
-          }
+        if (awareness && awareness.anchor && editor.sharedType) {
+          anchor = relativePositionToAbsolutePosition(
+            editor.sharedType,
+            awareness.anchor
+          );
+        }
 
-          return { anchor, focus, data: awareness };
-        })
-        .filter((cursor) => cursor.anchor && cursor.focus);
+        if (awareness && awareness.focus && editor.sharedType) {
+          focus = relativePositionToAbsolutePosition(
+            editor.sharedType,
+            awareness.focus
+          );
+        }
 
-      setCursorData(newCursorData as unknown as Cursor[]);
-    });
+        return { anchor, focus, data: awareness };
+      })
+      .filter((cursor) => cursor.anchor && cursor.focus);
+
+    setCursorData(newCursorData as unknown as Cursor[]);
   }, [editor]);
+
+  useEffect(() => {
+    // TODO: Not sure if this is needed or not, but possibly,
+    // to draw other cursors who are already present in the
+    // editor when this editor first renders.
+    onUpdate();
+    editor.awareness.on('update', onUpdate);
+    return () => editor.awareness.off('update', onUpdate);
+  }, [editor, onUpdate]);
 
   const decorate = useCallback(
     ([node, path]: NodeEntry) => {

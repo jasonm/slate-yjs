@@ -5,15 +5,17 @@ import { absolutePositionToRelativePosition } from '../cursor/utils';
 import { YjsEditor } from './yjsEditor';
 
 const AWARENESS: WeakMap<Editor, Awareness> = new WeakMap();
+const AWARENESS_PATHS: WeakMap<Editor, string> = new WeakMap();
 
 export interface CursorEditor extends YjsEditor {
   awareness: Awareness;
+  awarenessPath: string;
 }
 
 export const CursorEditor = {
   awareness(editor: CursorEditor): Awareness {
     const awareness = AWARENESS.get(editor);
-    invariant(awareness, 'CursorEditor without attaches awareness');
+    invariant(awareness, 'CursorEditor without attached awareness');
     return awareness;
   },
 
@@ -30,18 +32,26 @@ export const CursorEditor = {
       absolutePositionToRelativePosition(sharedType, selection.focus);
 
     const awareness = CursorEditor.awareness(editor);
-    awareness.setLocalState({ ...awareness.getLocalState(), anchor, focus });
+
+    awareness.setLocalState({
+      ...awareness.getLocalState(),
+      anchor,
+      focus,
+    });
   },
 };
 
 export function withCursor<T extends YjsEditor>(
   editor: T,
-  awareness: Awareness
+  awareness: Awareness,
+  awarenessPath: string
 ): T & CursorEditor {
   const e = editor as T & CursorEditor;
 
   AWARENESS.set(e, awareness);
   e.awareness = awareness;
+  AWARENESS_PATHS.set(e, awarenessPath);
+  e.awarenessPath = awarenessPath;
 
   const { onChange } = editor;
 
